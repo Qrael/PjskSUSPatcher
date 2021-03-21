@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Loading Song...</title>
+        <noscript>This page requires JavaScript to function.</noscript>
+        <link rel="stylesheet" href="css/style.css">
+        <!-- don't hate -->
+        <script type="text/javascript" src="js/FileSaver.min.js"></script>
+        <script type="text/javascript" src="js/jszip.min.js"></script>
+        <script type="text/javascript">
+          Mp3LameEncoderConfig = {memoryInitializerPrefixURL: "js/"}
+        </script>
+        <script type="text/javascript" src="js/WavAudioEncoder.min.js"></script>
+        <script type="text/javascript" src="js/Mp3LameEncoder.min.js"></script>
+        <script type="text/javascript" src="js/SusPatcher.js"></script>
+        <script type="text/javascript" src="js/trimmer.js"></script>
+        <script type="text/javascript" src="js/collapsible.js"></script>
+        <script type="text/javascript">
+            var patcher;
+            window.addEventListener("load", function () {
+              let title = document.getElementsByTagName("title")[0];
+              let h1 = document.getElementsByTagName("h1")[0];
+              let content = document.getElementById("song");
+              let id = (new URLSearchParams(window.location.search)).get("id");
+              if (!id) {
+                title.innerText = `Error - PjskSUSPatcher`;
+                h1.innerText = "Error: No song specified.";
+                content.setAttribute("style","text-align:center;");
+                content.innerHTML = "";
+              }
+              patcher = new Patcher(parseInt(id));
+              let info = document.createElement("div");
+              let options = document.createElement("div");
+              options.classList.add("selections");
+              
+              let charts = document.createElement("div");
+              charts.setAttribute("id","charts");
+              charts.innerText="Loading charts...";
+              
+              let media = document.createElement("div");
+              media.setAttribute("id","media");
+              media.innerText="Loading media...";
+              
+              let download = document.createElement("button");
+              download.setAttribute("onclick","patcher.saveContent()");
+              download.setAttribute("id","download");
+              download.disabled=true;
+              download.innerText="Patch and download selected";
+              
+              let audtype = document.createElement("div");
+              audtype.innerHTML = `<input type="radio" class="audtype" name="audtype" value="mp3" checked><label for="mp3">MP3</label>
+              <input type="radio" class="audtype" name="audtype" value="wav"><label for="wav">WAV</label>`
+              
+              let selection = document.createElement("div");
+              selection.innerHTML = `<button class="select" onclick="patcher.selectAll()">Select all</button>
+              <button class="select" onclick="patcher.unselectAll()">Unselect all</button>
+              `
+              selection.append(download);
+              
+              options.append(charts,media);
+              
+              patcher.addEventListener('ERRNOSONG', ()=>{
+                title.innerText = `Error - PjskSUSPatcher`;
+                h1.innerText = "Error: Specified song ID does not exist.";
+                content.setAttribute("style","text-align:center;");
+                content.innerHTML = "";
+              })
+              patcher.addEventListener('ready', ()=>{
+                info.innerHTML = `<p>Lyricist: ${patcher.song.raw.lyricist}<br />Composer: ${patcher.song.raw.composer}<br />Arranger: ${patcher.song.raw.arranger}</p><p>Select file to download;<br />vocal to be used for chart music and music format</p>`
+                content.classList.add("songContainer");
+                title.innerText = `${patcher.song.title} - PjskSUSPatcher`;
+                h1.innerText = patcher.song.title;
+                let img = document.createElement("p");
+                img.innerHTML = `<img src="${patcher.song.jacket.url}"></img>`
+                content.append(img,info,options,audtype,selection);
+                patcher.loadMedia();
+              })
+              patcher.addEventListener('chartsloaded', ()=>{
+                charts.innerHTML = `<div class="chart"><input type="checkbox" id="Easy" name="Easy"><label for="Easy">Easy: ${patcher.charts.easy.playlevel}</label></div>
+                <div class="chart"><input type="checkbox" id="Normal" name="Normal"><label for="Normal">Normal: ${patcher.charts.normal.playlevel}</label></div>
+                <div class="chart"><input type="checkbox" id="Hard" name="Hard"><label for="Hard">Hard: ${patcher.charts.hard.playlevel}</label></div>
+                <div class="chart"><input type="checkbox" id="Expert" name="Expert"><label for="Expert">Expert: ${patcher.charts.expert.playlevel}</label></div>
+                <div class="chart"><input type="checkbox" id="Master" name="Master"><label for="Master">Master: ${patcher.charts.master.playlevel}</label></div>`
+              })
+              patcher.addEventListener('medialoaded', ()=>{
+                media.innerHTML = `<div class="jacket"><input type="checkbox" id="Jacket" name="Jacket"><label for="Jacket">Cover picture</label></div>`
+                for (let vocal in patcher.vocals) {
+                  let v = document.createElement("div");
+                  v.classList.add("vocal");
+                  v.innerHTML=`<input type="checkbox" class="vocal" name="${vocal}"><input type="radio" class="chartvocal" name="chartvocal" value="${vocal}"><label for="${vocal}">Vocal: ${patcher.vocals[vocal].members.join(", ")} (${vocal})</label>`
+                  media.append(v);
+                }
+                patcher.vocalselect = document.querySelectorAll(`input.chartvocal[type="radio"]`);
+                patcher.audtype = document.querySelectorAll(`input.audtype[type="radio"]`);
+                download.disabled = false;
+                document.querySelectorAll(`input[type="checkbox"]`).forEach(el=>{
+                  el.addEventListener('change',()=>{
+                    delete patcher.zip;
+                    download.disabled = false;
+                    download.innerText="Patch and download selected";
+                  })
+                })
+                document.querySelectorAll(`input.vocal[type="checkbox"]`).forEach(el=>{
+                  el.addEventListener('change',()=>{
+                    if (!el.checked) {
+                      document.querySelector(`input[type="radio"][name="chartvocal"][value="${el.getAttribute("name")}"]`).checked=false;
+                    }
+                  })
+                })
+              })
+              patcher.addEventListener('zipstart', ()=>{
+                download.disabled = true;
+                download.innerText="Zipping...";
+              })
+              patcher.addEventListener('zipend', ()=>{
+                download.disabled = false;
+                document.querySelectorAll(`input[type="checkbox"], input[type="radio"], button.select`).forEach(el=>el.disabled=false);
+                download.innerText="Zip generated!";
+              })
+            })
+        </script>
+    </head>
+    <body>
+        <h1>Loading Song...</h1>
+        <div id="song"></div>
+        <div class="tips">
+          Difficulty naming in Project Sekai: Colorful Stage differs from SUS specifications, therefore when you try to play the scores on SUS-compatible players, the difficulty will not match. Plus, the numeric difficulty level also differs. <br />
+          <button class="collapsible show" data-colid="1" onclick="toggleCol(1)">Open conversion table</button>
+          <button class="collapsible hide" data-colid="1" onclick="toggleCol(1)">Close conversion table</button>
+          <div class="collapsible hide" data-colid="1">
+            <table>
+              <tr>
+                <th>Pjsk</th>
+                <th>SUS Specs</th>
+              </tr>
+              <tr>
+                <td>EASY</td>
+                <td>BASIC</td>
+              </tr>
+              <tr>
+                <td>NORMAL</td>
+                <td>ADVANCED</td>
+              </tr>
+              <tr>
+                <td>HARD</td>
+                <td>EXPERT</td>
+              </tr>
+              <tr>
+                <td>EXPERT</td>
+                <td>MASTER</td>
+              </tr>
+              <tr>
+                <td>MASTER</td>
+                <td>WORLD'S END</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Project Sekai: Colorful Stage Score Patching Tool</title>
+        <noscript>This page requires JavaScript to function.</noscript>
+        <link rel="stylesheet" href="css/style.css">
+        <script type="text/javascript">
+          window.onload = () => {
+            let list = document.getElementById("list");
+            const assets = "https://api.pjsek.ai/assets";
+            const db = "https://api.pjsek.ai/database/master";
+            const http = new XMLHttpRequest();
+            http.open("GET", db+"/musics?$limit=200&$sort[id]=1");
+            http.setRequestHeader("Content-Type", "application/json");
+            http.onload = () => {
+              list.innerHTML = '';
+              for (let song of JSON.parse(http.response).data) {
+                let item = document.createElement("a");
+                let img = document.createElement("img");
+                item.setAttribute("href", `song.html?id=${song.id}`);
+                img.setAttribute("src",`https://assets.pjsek.ai/file/pjsekai-assets/startapp/music/jacket/${song.assetbundleName}/${song.assetbundleName}.png`);
+                let name = document.createElement("div");
+                name.innerText = song.title;
+                item.classList.add("songicon");
+                item.appendChild(img);
+                item.appendChild(name);
+                list.appendChild(item);
+              }
+            }
+            http.send();
+          }
+        </script>
+    </head>
+    <body>
+        <h1>Project Sekai: Colorful Stage Score Patching Tool</h1>
+        <h2>Pick a song!</h2>
+        <div id="list" class="icons">
+            Retrieving song list...
+        </div>
+        <pre class="tagline">Asset sources are from <a href="https://pjsek.ai/">pjsek.ai</a>.</pre>
+        <pre class="tagline"><em>Created by <a href="https://github.com/Qrael/">Qrael</a></em></pre>
+        <pre class="tagline"><em>View website source at <a href="https://github.com/Qrael/PjskSUSPatcher">GitHub</a></em></pre>
+    </body>
+</html>

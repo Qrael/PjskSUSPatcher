@@ -1,0 +1,223 @@
+.icons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    margin: 0 auto;
+    text-align: center;
+    justify-content: center;
+}
+
+.songicon,
+.songContainer {
+    border-radius: 2px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+    color: inherit;
+    transition: all 0.3s cubic-bezier(.25, .8, .25, 1);
+    background: #fff;
+}
+
+.songicon {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    margin: 15px;
+    width: 144px;
+    padding: 10px;
+    justify-content: center;
+}
+
+.songicon:hover {
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+}
+
+.songicon img {
+    margin-bottom: 10px;
+    border-radius: 2px;
+    width: 128px;
+    height: 128px;
+    box-shadow: 0 2px 1px rgba(0, 0, 0, .24), 0 0px 1px rgba(0, 0, 0, 0.48);
+    align-self: center;
+    margin-top: 5px;
+}
+
+.songicon>div>div {
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+.songicon>div {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.error {
+    color: red;
+}
+
+.songContainer {
+    background-color: white;
+    padding: 20px;
+    max-width: 850px;
+    margin: 0 auto 2em;
+    position: relative;
+    text-align: center;
+}
+
+.songContainer img {
+    margin-bottom: 10px;
+    border-radius: 2px;
+    width: 256px;
+    height: 256px;
+    box-shadow: 0 2px 1px rgba(0, 0, 0, .24), 0 0px 1px rgba(0, 0, 0, 0.48);
+    align-self: center;
+    margin-top: 5px;
+}
+
+#charts {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: stretch;
+    margin: 0 auto;
+    justify-content: center;
+}
+
+#charts .chart {
+    flex: 1;
+    display: inline-block;
+    margin: 0.5em;
+}
+
+#media {
+    display: flex;
+    flex-direction: column;
+}
+
+#media > div {
+    flex: 1;
+}
+
+.selections {
+    display: flex;
+    text-align: left;
+}
+
+@media (max-width: 600px) {
+    .selections {
+        flex-direction: column;
+        align-content: stretch;
+    }
+}
+@media (min-width: 601px) {
+    #charts {
+        flex: 2;
+        padding: 0 2em;
+    }
+    #media {
+        flex: 3;
+        padding: 0 1em;
+    }
+}
+
+
+
+.collapsible.hide {
+    display: none;
+}
+
+.tips {
+  width: 80%;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+.tips table {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+body {
+    margin: 40px auto;
+    max-width: 1300px;
+    line-height: 1.6;
+    font-size: 18px;
+    color: #000;
+    padding: 0 10px;
+    background: #e2e1e0;
+    font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;
+}
+
+h1,
+h2,
+h3 {
+    line-height: 1.2;
+}
+
+h4,
+h5 {
+    line-height: 1;
+    margin: 10px auto;
+}
+
+h1,
+h2 {
+    text-align: center;
+}
+
+h1 a {
+    color: inherit;
+    text-decoration: inherit;
+}
+
+button {
+    transition-duration: 0.2s;
+    transition-timing-function: cubic-bezier(0.25, 0.5, 0.5, 1);
+    position: relative;
+    padding: 0 16px;
+    height: 36px;
+    border: none;
+    border-radius: 2px;
+    outline: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    line-height: 2.25rem;
+    color: rgba(0, 0, 0, 0.73);
+    transition-property: box-shadow, background;
+    background-color: #40b31a;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25), 0px 0px 2px rgba(0, 0, 0, 0.125);
+    color: white;
+    cursor: pointer;
+}
+
+button:disabled {
+    background-color: rgba(0, 0, 0, 0.12);
+    color: rgba(0, 0, 0, 0.38);
+    box-shadow: 0px 0px 0px 0px rgba(0, 0, 0, 0.2), 0px 0px 0px 0px rgba(0, 0, 0, 0.14), 0px 0px 0px 0px rgba(0, 0, 0, 0.12);
+    cursor: default;
+}
+
+button:hover:enabled, .fileLabel > strong:hover {
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.25), 0px 0px 4px rgba(0, 0, 0, 0.125);
+    background-color: #5dbe3c;
+}
+
+li > button {
+    height: 24px;
+    padding: 0 7px;
+    line-height: 0;
+}
+
+
+input[type=checkbox],
+input[type=radio] {
+    vertical-align: middle;
+    position: relative;
+    bottom: 1px;
+}
+
+input[type=radio] {
+    bottom: 2px;
+}
