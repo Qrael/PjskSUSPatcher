@@ -19,7 +19,10 @@ class Patcher extends EventTarget {
     expert: {playlevel:0,difficulty:3,sus:"",url:""},
     master: {playlevel:0,difficulty:4,sus:"",url:""},
   };
-  gameCharacters = {};
+  char = {
+    game_character: {},
+    outside_character: {},
+  }
   constructor(id) {
     super();
     let http = new XMLHttpRequest();
@@ -44,18 +47,30 @@ class Patcher extends EventTarget {
     
     let http2 = new XMLHttpRequest();
     http2.open("GET", this.db+"/gameCharacters?$limit=200");
-    http.setRequestHeader("Accept", "application/json");
+    http2.setRequestHeader("Accept", "application/json");
     let onLoad2 = () => {
       for (let char of JSON.parse(http2.response).data) {
-        this.gameCharacters[char.id] = char;
+        this.char.game_character[char.id] = char;
       };
       http2.res();
     }
     http2.onload = onLoad2.bind(this);
     
-    Promise.all([new Promise(res=>http.res=res),new Promise(res=>http2.res=res)]).then((()=>this.dispatchEvent(new Event("ready"))).bind(this))
+    let http3 = new XMLHttpRequest();
+    http3.open("GET", this.db+"/outsideCharacters?$limit=200");
+    http3.setRequestHeader("Accept", "application/json");
+    let onLoad3 = () => {
+      for (let char of JSON.parse(http3.response).data) {
+        this.char.outside_character[char.id] = char;
+      };
+      http3.res();
+    }
+    http3.onload = onLoad3.bind(this);
+    
+    Promise.all([new Promise(res=>http.res=res),new Promise(res=>http2.res=res),new Promise(res=>http3.res=res)]).then((()=>this.dispatchEvent(new Event("ready"))).bind(this))
     http.send();
     http2.send();
+    http3.send();
   };
   
   addSongData(data) {
@@ -104,8 +119,8 @@ class Patcher extends EventTarget {
         this.vocals[vocal.assetbundleName] = vocal;
         this.vocals[vocal.assetbundleName].members = [];
         for (let member of vocal.characters) {
-          let c = this.gameCharacters[member.characterId];
-          this.vocals[vocal.assetbundleName].members.push(`${c.firstName?c.firstName+" ":""}${c.givenName}`);
+          let c = this.char[member.characterType][member.characterId];
+          this.vocals[vocal.assetbundleName].members.push(c.name?c.name:`${c.firstName?c.firstName+" ":""}${c.givenName}`);
         }
         tmp2[vocal.assetbundleName] = vocal;
         tmp2[vocal.assetbundleName].http = new XMLHttpRequest();
@@ -166,7 +181,114 @@ class Patcher extends EventTarget {
       tmp[tmp.findIndex(cmd=>cmd.startsWith("#DIFFICULTY"))]=`#DIFFICULTY ${i}`;
       tmp[tmp.findIndex(cmd=>cmd.startsWith("#PLAYLEVEL"))]=`#PLAYLEVEL ${this.charts[this.difficulties[i]].playlevel}`;
       
-      tmp.splice(1,0,"This chart is created by Project Sekai: Colorful Stage, and patched as playable SUS with PjskSUSPatcher.");
+      let info = "This chart is created for Project Sekai: Colorful Stage, and patched as playable SUS with PjskSUSPatcher."
+      if (!tmp[1].startsWith(info)) {
+        // The chart has not been patched yet, patch it now
+        
+        // Remove skills, fever and fever chance
+        tmp = tmp.filter(cmd=>!/^\#\d{3}1[0f]:/gi.test(cmd));
+        
+        // Find air downs
+        let tmp2 = [];
+        tmp.forEach(cmd=>{
+          let match = [...cmd.matchAll(/#(\d{3})5(\w):\s?((\w*)[256]((?=[^0])\w)(\w*))/gi)];
+          if (match.length) {
+            tmp2.push(...match);
+          }
+        });
+        // Remove air downs and taps associated with them
+        for (let bar of tmp2) {
+          let tmp3=[];
+          let j = tmp.findIndex(cmd=>cmd.startsWith(bar[0]));
+          if (j!=-1) {
+            let match = (new RegExp(`(#\\d{3}5\\w:\\s?((\\w\\w)*?))[256][^0](((\\w\\w)*)?)`,"gi")).exec(tmp[j]);
+            while (match) {
+              tmp[j] = match[1]+"00"+match[4];
+              tmp3.push(match[2].length);
+              match = (new RegExp(`(#\\d{3}5\\w:\\s?((\\w\\w)*?))[256][^0](((\\w\\w)*)?)`,"gi")).exec(tmp[j]);
+            }
+          }
+          j = tmp.findIndex(cmd=>cmd.startsWith(`#${bar[1]}1${bar[2]}:`));
+          let sliders = tmp.filter(cmd=>(new RegExp(`#${bar[1]}[34]${bar[2]}\\w:\\w?`,"gi").test(cmd)));
+          for (let slide of sliders) {
+            let k = tmp.indexOf(slide);
+            let len = /#\d{3}[34]\w{2}:\s?(\w*)/gi.exec(tmp[k])[1].length;
+            let ratio = len/(bar[3].length);
+            tmp3 = tmp3.filter(note=>{
+              let match = (new RegExp(`#\\d{3}[34]\\w{2}:\\s?(\\w{${parseInt(note*ratio/2)*2}})1${bar[5]}(\\w*)?`,"gi")).exec(tmp[k]);
+              return !match;
+            })
+          }
+          
+          if (j!=-1) {
+            let len = /#\d{3}1\w:\s?(\w*)/gi.exec(tmp[j])[1].length;
+            let ratio = len/(bar[3].length);
+            for (let note of tmp3) {
+              let match = (new RegExp(`(#\\d{3}1\\w:\\s?\\w{${parseInt(note*ratio/2)*2}})\\d[^0]((\\w*)?)`,"gi")).exec(tmp[j]);
+              if (match) { tmp[j] = match[1]+"00"+match[2]; }
+            }
+          }
+        };
+        
+        // Find air ups
+        tmp2 = [];
+        tmp.forEach(cmd=>{
+          let match = [...cmd.matchAll(/#(\d{3})5(\w):\s?((((\w\w)*)?)[134]((?=[^0])\w)(\w*)?)/gi)];
+          if (match.length) {
+            tmp2.push(...match);
+          }
+        });
+        // Remove taps associated with air ups at the end of slides
+        for (let bar of tmp2) {
+          let tmp3=[];
+          let j = tmp.findIndex(cmd=>cmd.startsWith(bar[0]));
+          if (j!=-1) {
+            for (let k = 0; k < bar[3].length; k+=2) {
+              if (["1","3","4"].includes(bar[3][k])) tmp3.push(k);
+            }
+          }
+          let sliders = tmp.filter(cmd=>(new RegExp(`#${bar[1]}[34]${bar[2]}\\w:\\w?`,"gi").test(cmd)));
+          for (let slide of sliders) {
+            let k = tmp.indexOf(slide);
+            let len = /#\d{3}[34]\w{2}:\s?(\w*)/gi.exec(tmp[k])[1].length;
+            let ratio = len/(bar[3].length);
+            tmp3 = tmp3.filter(note=>{
+              return (new RegExp(`#\\d{3}[34]\\w{2}:\\s?(\\w{${parseInt(note*ratio/2)*2}})[^0]${bar[7]}(\\w*)?`,"gi")).test(tmp[k]);
+            })
+          }
+          j = tmp.findIndex(cmd=>cmd.startsWith(`#${bar[1]}1${bar[2]}:`));
+          if (j!=-1) {
+            let len = /#\d{3}1\w:\s?(\w*)/gi.exec(tmp[j])[1].length;
+            let ratio = len/(bar[3].length);
+            for (let note of tmp3) {
+              let match = (new RegExp(`(#\\d{3}1\\w:\\s?\\w{${parseInt(note*ratio/2)*2}})\\d[^0]((\\w*)?)`,"gi")).exec(tmp[j]);
+              if (match) { tmp[j] = match[1]+"00"+match[2]; }
+            }
+          }
+        };
+        
+        // Remove flick
+        tmp2=[];
+        tmp.forEach(cmd=>{
+          let match = [...cmd.matchAll(/#(\d{3})1(\w):\s?((\w*)3(((?=[^0])\w)\w*)?)/gi)];
+          if (match.length) {
+            tmp2.push(...match);
+          }
+        });
+        for (let bar of tmp2) {
+          let j = tmp.findIndex(cmd=>cmd.startsWith(bar[0]));
+          if (j!=-1) {
+            let match = (new RegExp(`(#\\d{3}1\\w:\\s?((\\w\\w)*?))3(?=[^0])\\w(((\\w\\w)*)?)`,"gi")).exec(tmp[j]);
+            while (match&&!(match[2].length%2)) {
+              tmp[j] = match[1]+"00"+match[4];
+              match = (new RegExp(`(#\\d{3}1\\w:\\s?((\\w\\w)*?))3(?=[^0])\\w((\\w*)?)`,"gi")).exec(tmp[j]);
+            }
+          }
+        }
+        
+        tmp.splice(1,0,info);
+        }
+
       
       this.charts[this.difficulties[i]].sus = tmp.join("\n");
     }
@@ -192,7 +314,6 @@ class Patcher extends EventTarget {
   saveContent() {
     document.querySelectorAll(`input[type="checkbox"], input[type="radio"], button.select`).forEach(el=>el.disabled=true);
     this.dispatchEvent(new Event("zipstart"));
-    this.patchSus();
     let e = document.getElementById("Easy").checked;
     let n = document.getElementById("Normal").checked;
     let h = document.getElementById("Hard").checked;
@@ -222,6 +343,7 @@ class Patcher extends EventTarget {
       document.querySelectorAll(`input[type="checkbox"], button.select`).forEach(el=>el.disabled=false);
       return saveAs(this.zip, `${this.song.title}.zip`);
     };
+    this.patchSus();
     let zip = new JSZip();
     for (let level of this.difficulties) {
       if (options[level]) {

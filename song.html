@@ -58,6 +58,10 @@
               `
               selection.append(download);
               
+              let warn = document.createElement("div");
+              warn.classList.add("warn");
+              warn.innerHTML = `The patcher will take some time transcoding audio into your desired format and zipping them. Please do not reload the page if you see the page not responding, it's just doing its work in the background.`
+              
               options.append(charts,media);
               
               patcher.addEventListener('ERRNOSONG', ()=>{
@@ -73,7 +77,7 @@
                 h1.innerText = patcher.song.title;
                 let img = document.createElement("p");
                 img.innerHTML = `<img src="${patcher.song.jacket.url}"></img>`
-                content.append(img,info,options,audtype,selection);
+                content.append(img,info,options,audtype,selection,warn);
                 patcher.loadMedia();
               })
               patcher.addEventListener('chartsloaded', ()=>{
@@ -94,7 +98,7 @@
                 patcher.vocalselect = document.querySelectorAll(`input.chartvocal[type="radio"]`);
                 patcher.audtype = document.querySelectorAll(`input.audtype[type="radio"]`);
                 download.disabled = false;
-                document.querySelectorAll(`input[type="checkbox"]`).forEach(el=>{
+                document.querySelectorAll(`input[type="checkbox"], input[type="radio"]`).forEach(el=>{
                   el.addEventListener('change',()=>{
                     delete patcher.zip;
                     download.disabled = false;
