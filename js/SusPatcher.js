@@ -191,7 +191,7 @@ class Patcher extends EventTarget {
         // Find air downs
         let tmp2 = [];
         tmp.forEach(cmd=>{
-          let match = [...cmd.matchAll(/#(\d{3})5(\w):\s?((\w*)[256]((?=[^0])\w)(\w*))/gi)];
+          let match = [...cmd.matchAll(/#(\d{3})5(\w):\s?((((\w\w)*)?)[256]((?=[^0])\w)(\w*))/gi)];
           if (match.length) {
             tmp2.push(...match);
           }
@@ -201,31 +201,62 @@ class Patcher extends EventTarget {
           let tmp3=[];
           let j = tmp.findIndex(cmd=>cmd.startsWith(bar[0]));
           if (j!=-1) {
-            let match = (new RegExp(`(#\\d{3}5\\w:\\s?((\\w\\w)*?))[256][^0](((\\w\\w)*)?)`,"gi")).exec(tmp[j]);
-            while (match) {
-              tmp[j] = match[1]+"00"+match[4];
-              tmp3.push(match[2].length);
-              match = (new RegExp(`(#\\d{3}5\\w:\\s?((\\w\\w)*?))[256][^0](((\\w\\w)*)?)`,"gi")).exec(tmp[j]);
+            let match = (new RegExp(`(#\\d{3}5\\w:\\s?)((\\w\\w)*)?[256][^0]((\\w\\w)*)?`,"gi")).exec(tmp[j]);
+            for (let k = 0; k < bar[3].length; k+=2) {
+              if (["2","5","6"].includes(bar[3][k])) {
+                tmp3.push(k);
+                tmp[j] = tmp[j].substring(0,match[1].length+k)+"00"+tmp[j].substring(match[1].length+k+2);
+              };
             }
           }
-          j = tmp.findIndex(cmd=>cmd.startsWith(`#${bar[1]}1${bar[2]}:`));
           let sliders = tmp.filter(cmd=>(new RegExp(`#${bar[1]}[34]${bar[2]}\\w:\\w?`,"gi").test(cmd)));
+          let slidesum = "";
+          let prefix = "";
           for (let slide of sliders) {
-            let k = tmp.indexOf(slide);
-            let len = /#\d{3}[34]\w{2}:\s?(\w*)/gi.exec(tmp[k])[1].length;
-            let ratio = len/(bar[3].length);
-            tmp3 = tmp3.filter(note=>{
-              let match = (new RegExp(`#\\d{3}[34]\\w{2}:\\s?(\\w{${parseInt(note*ratio/2)*2}})1${bar[5]}(\\w*)?`,"gi")).exec(tmp[k]);
-              return !match;
-            })
+            if (!slidesum) { 
+              prefix = /(#\d{3}[34]\w{2}:\s?)\w*/gi.exec(slide)[1]
+              slidesum = /#\d{3}[34]\w{2}:\s?(\w*)/gi.exec(slide)[1];
+              continue;
+            }
+            let content = /#\d{3}[34]\w{2}:\s?(\w*)/gi.exec(slide)[1]
+            if (slidesum.length>content.length) {
+              let ratio = slidesum.length/content.length;
+              let expand = "";
+              for (let k = 0; k < content.length; k+=2) {
+                expand+=content[k]+content[k+1]+"0".repeat(ratio*2-2)
+              }
+              content=expand;
+            } else {
+              let ratio = content.length/slidesum.length;
+              let expand = "";
+              for (let k = 0; k < slidesum.length; k+=2) {
+                expand+=slidesum[k]+slidesum[k+1]+"0".repeat((ratio*2-2)>0?(ratio*2-2):0)
+              }
+              slidesum=expand;
+            }
+            for (let k = 0; k < slidesum.length; k+=2) {
+              if (slidesum[k]=="0") {
+                slidesum = slidesum.substring(0,k)+content.substring(k,k+2)+slidesum.substring(k+2);
+              }
+            }
           }
-          
-          if (j!=-1) {
-            let len = /#\d{3}1\w:\s?(\w*)/gi.exec(tmp[j])[1].length;
-            let ratio = len/(bar[3].length);
-            for (let note of tmp3) {
-              let match = (new RegExp(`(#\\d{3}1\\w:\\s?\\w{${parseInt(note*ratio/2)*2}})\\d[^0]((\\w*)?)`,"gi")).exec(tmp[j]);
-              if (match) { tmp[j] = match[1]+"00"+match[2]; }
+          let ratio = slidesum.length/bar[3].length;
+          tmp3 = tmp3.filter(note=>{
+            return !(new RegExp(`#\\d{3}[34]\\w{2}:\\s?(\\w{${parseInt(note*ratio/2)*2}})1${bar[7]}(\\w*)?`,"gi")).test(prefix+slidesum);
+          })
+          j = [];
+          tmp.filter((cmd,i)=>{
+            if (cmd.startsWith(`#${bar[1]}1${bar[2]}:`)) j.push(i);
+            return cmd.startsWith(`#${bar[1]}1${bar[2]}:`)
+          });
+          if (j.length) {
+            for (let k of j) {
+              let len = /#\d{3}1\w:\s?(\w*)/gi.exec(tmp[k])[1].length;
+              let ratio = len/(bar[3].length);
+              for (let note of tmp3) {
+                let match = (new RegExp(`(#\\d{3}1\\w:\\s?\\w{${parseInt(note*ratio/2)*2}})\\d[^0]((\\w*)?)`,"gi")).exec(tmp[k]);
+                if (match) { tmp[k] = match[1]+"00"+match[2]; }
+              }
             }
           }
         };
@@ -248,14 +279,41 @@ class Patcher extends EventTarget {
             }
           }
           let sliders = tmp.filter(cmd=>(new RegExp(`#${bar[1]}[34]${bar[2]}\\w:\\w?`,"gi").test(cmd)));
+          let slidesum = "";
+          let prefix = "";
           for (let slide of sliders) {
-            let k = tmp.indexOf(slide);
-            let len = /#\d{3}[34]\w{2}:\s?(\w*)/gi.exec(tmp[k])[1].length;
-            let ratio = len/(bar[3].length);
-            tmp3 = tmp3.filter(note=>{
-              return (new RegExp(`#\\d{3}[34]\\w{2}:\\s?(\\w{${parseInt(note*ratio/2)*2}})[^0]${bar[7]}(\\w*)?`,"gi")).test(tmp[k]);
-            })
+            if (!slidesum) { 
+              prefix = /(#\d{3}[34]\w{2}:\s?)\w*/gi.exec(slide)[1]
+              slidesum = /#\d{3}[34]\w{2}:\s?(\w*)/gi.exec(slide)[1];
+              continue;
+            }
+            let content = /#\d{3}[34]\w{2}:\s?(\w*)/gi.exec(slide)[1]
+            if (slidesum.length>content.length) {
+              let ratio = slidesum.length/content.length;
+              let expand = "";
+              for (let k = 0; k < content.length; k+=2) {
+                expand+=content[k]+content[k+1]+"0".repeat(ratio*2-2)
+              }
+              content=expand;
+            } else {
+              let ratio = content.length/slidesum.length;
+              let expand = "";
+              for (let k = 0; k < slidesum.length; k+=2) {
+                expand+=slidesum[k]+slidesum[k+1]+"0".repeat((ratio*2-2)>0?(ratio*2-2):0)
+              }
+              slidesum=expand;
+            }
+            for (let k = 0; k < slidesum.length; k+=2) {
+              if (slidesum[k]=="0") {
+                slidesum = slidesum.substring(0,k)+content.substring(k,k+2)+slidesum.substring(k+2);
+              }
+            }
           }
+          let ratio = slidesum.length/bar[3].length;
+          tmp3 = tmp3.filter(note=>{
+            return (new RegExp(`#\\d{3}[34]\\w{2}:\\s?(\\w{${parseInt(note*ratio/2)*2}})[^0]${bar[7]}(\\w*)?`,"gi")).test(prefix+slidesum);
+          })
+          
           j = tmp.findIndex(cmd=>cmd.startsWith(`#${bar[1]}1${bar[2]}:`));
           if (j!=-1) {
             let len = /#\d{3}1\w:\s?(\w*)/gi.exec(tmp[j])[1].length;
