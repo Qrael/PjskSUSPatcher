@@ -72,12 +72,14 @@
               })
               patcher.addEventListener('ready', ()=>{
                 info.innerHTML = `<p>Lyricist: ${patcher.song.raw.lyricist}<br />Composer: ${patcher.song.raw.composer}<br />Arranger: ${patcher.song.raw.arranger}</p><p>Select file to download;<br />vocal to be used for chart music and music format</p>`
-                content.classList.add("songContainer");
                 title.innerText = `${patcher.song.title} - PjskSUSPatcher`;
                 h1.innerText = patcher.song.title;
                 let img = document.createElement("p");
-                img.innerHTML = `<img src="${patcher.song.jacket.url}"></img>`
-                content.append(img,info,options,audtype,selection,warn);
+                patcher.addEventListener('jacketloaded', ()=>{
+                  content.classList.add("songContainer");
+                  img.innerHTML = `<img src="${(window.URL||window.webkitURL).createObjectURL(patcher.song.jacket.file)}"></img>`
+                  content.append(img,info,options,audtype,selection,warn);
+                })
                 patcher.loadMedia();
               })
               patcher.addEventListener('chartsloaded', ()=>{
