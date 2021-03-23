@@ -18,6 +18,7 @@
               for (let song of JSON.parse(http.response).data) {
                 let item = document.createElement("a");
                 let img = document.createElement("img");
+                img.crossOrigin="anonymous";
                 item.setAttribute("href", `song.html?id=${song.id}`);
                 img.setAttribute("src",`https://assets.pjsek.ai/file/pjsekai-assets/startapp/music/jacket/${song.assetbundleName}/${song.assetbundleName}.png`);
                 let name = document.createElement("div");
