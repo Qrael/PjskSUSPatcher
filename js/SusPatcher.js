@@ -242,6 +242,11 @@ class Patcher extends EventTarget {
           }
           let ratio = slidesum.length/bar[3].length;
           tmp3 = tmp3.filter(note=>{
+            if ((note*ratio)%2) {
+              // No slide start/step/end exist for that air down
+              // Shdn't ever happen???
+              return false;
+            }
             return !(new RegExp(`#\\d{3}[34]\\w{2}:\\s?(\\w{${parseInt(note*ratio/2)*2}})1${bar[7]}(\\w*)?`,"gi")).test(prefix+slidesum);
           })
           j = [];
@@ -311,6 +316,11 @@ class Patcher extends EventTarget {
           }
           let ratio = slidesum.length/bar[3].length;
           tmp3 = tmp3.filter(note=>{
+            if ((note*ratio)%2) {
+              // Slide step does not exist for that air up
+              // It's just a plain Pjsk flick
+              return false;
+            }
             return (new RegExp(`#\\d{3}[34]\\w{2}:\\s?(\\w{${parseInt(note*ratio/2)*2}})[^0]${bar[7]}(\\w*)?`,"gi")).test(prefix+slidesum);
           })
           
@@ -346,8 +356,8 @@ class Patcher extends EventTarget {
         
         tmp.splice(1,0,info);
         }
-
-      
+        
+        
       this.charts[this.difficulties[i]].sus = tmp.join("\n");
     }
   }
