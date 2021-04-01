@@ -191,7 +191,7 @@ class Patcher extends EventTarget {
         // Find air downs
         let tmp2 = [];
         tmp.forEach(cmd=>{
-          let match = [...cmd.matchAll(/#(\d{3})5(\w):\s?((((\w\w)*)?)[256]((?=[^0])\w)(\w*))/gi)];
+          let match = [...cmd.matchAll(/#(\d{3})5(\w):\s?(((?:(?:\w\w)*)?)[256](?=[^0])(?:\w)(?:\w*)?)/gi)];
           if (match.length) {
             tmp2.push(...match);
           }
@@ -201,7 +201,7 @@ class Patcher extends EventTarget {
           let tmp3=[];
           let j = tmp.findIndex(cmd=>cmd.startsWith(bar[0]));
           if (j!=-1) {
-            let match = (new RegExp(`(#\\d{3}5\\w:\\s?)((\\w\\w)*)?[256][^0]((\\w\\w)*)?`,"gi")).exec(tmp[j]);
+            let match = (new RegExp(`(#\\d{3}5\\w:\\s?)(?:(?:\\w\\w)*)?[256][^0](?:(?:\\w\\w)*)?`,"gi")).exec(tmp[j]);
             for (let k = 0; k < bar[3].length; k+=2) {
               if (["2","5","6"].includes(bar[3][k])) {
                 tmp3.push(k);
@@ -269,7 +269,7 @@ class Patcher extends EventTarget {
         // Find air ups
         tmp2 = [];
         tmp.forEach(cmd=>{
-          let match = [...cmd.matchAll(/#(\d{3})5(\w):\s?((((\w\w)*)?)[134]((?=[^0])\w)(\w*)?)/gi)];
+          let match = [...cmd.matchAll(/#(\d{3})5(\w):\s?(((?:(?:\w\w)*)?)[134](?=[^0])\w(?:\w*)?)/gi)];
           if (match.length) {
             tmp2.push(...match);
           }
@@ -335,7 +335,7 @@ class Patcher extends EventTarget {
           }
         };
         
-        // Remove flick
+        // Remove flick and slide steps underneath
         tmp2=[];
         tmp.forEach(cmd=>{
           let match = [...cmd.matchAll(/#(\d{3})1(\w):\s?((\w*)3(((?=[^0])\w)\w*)?)/gi)];
@@ -344,18 +344,35 @@ class Patcher extends EventTarget {
           }
         });
         for (let bar of tmp2) {
+          let tmp3=[];
           let j = tmp.findIndex(cmd=>cmd.startsWith(bar[0]));
           if (j!=-1) {
-            let match = (new RegExp(`(#\\d{3}1\\w:\\s?((\\w\\w)*?))3(?=[^0])\\w(((\\w\\w)*)?)`,"gi")).exec(tmp[j]);
-            while (match&&!(match[2].length%2)) {
-              tmp[j] = match[1]+"00"+match[4];
-              match = (new RegExp(`(#\\d{3}1\\w:\\s?((\\w\\w)*?))3(?=[^0])\\w((\\w*)?)`,"gi")).exec(tmp[j]);
+            let match = /(#\d{3}1\w:\s?)(((?:(?:\w\w)*)?)3(?=[^0])\w((?:(?:\w\w)*)?))/gi.exec(tmp[j]);
+            while (match&&!(match[3].length%2)) {
+              tmp[j] = match[1]+match[3]+"00"+match[4];
+              tmp3.push(match[3].length/match[2].length);
+              console.log(match.length)
+              match = /(#\d{3}1\w:\s?)(((?:(?:\w\w)*)?)3(?=[^0])\w((?:(?:\w\w)*)?))/gi.exec(tmp[j]);
             }
           }
-        }
+          let sliders = tmp.filter(cmd=>(new RegExp(`#${bar[1]}[34]${bar[2]}\\w:\\s?`,"gi")).test(cmd));
+          for (let slide of sliders) {
+            let k = tmp.indexOf(slide);
+            let len = /#\d{3}[34]\w\w:\s?(\w*)/gi.exec(tmp[k])[1].length;
+            for (let note of tmp3) {
+              if ((note*len)%2) {
+                // Slide step does not exist for that flick
+                // Shdn't ever happen?
+                continue;
+              }
+              let match = (new RegExp(`(#\\d{3}[34]\\w\\w:\\s?\\w{${parseInt(note*len/2)*2}})[35][^0]((?:\\w*)?)`,"gi")).exec(tmp[k]);
+              if (match) { tmp[k] = match[1]+"00"+match[2]; }
+            }
+          }
+        };
         
         tmp.splice(1,0,info);
-        }
+      }
         
         
       this.charts[this.difficulties[i]].sus = tmp.join("\n");
