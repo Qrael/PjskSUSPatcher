@@ -351,7 +351,6 @@ class Patcher extends EventTarget {
             while (match&&!(match[3].length%2)) {
               tmp[j] = match[1]+match[3]+"00"+match[4];
               tmp3.push(match[3].length/match[2].length);
-              console.log(match.length)
               match = /(#\d{3}1\w:\s?)(((?:(?:\w\w)*)?)3(?=[^0])\w((?:(?:\w\w)*)?))/gi.exec(tmp[j]);
             }
           }
