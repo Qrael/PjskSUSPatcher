@@ -90,7 +90,7 @@
                 for (let vocal in patcher.vocals) {
                   let v = document.createElement("div");
                   v.classList.add("vocal");
-                  v.innerHTML=`<input type="checkbox" class="vocal" name="${vocal}"><input type="radio" class="chartvocal" name="chartvocal" value="${vocal}"><label for="${vocal}">Vocal: ${patcher.vocals[vocal].members.join(", ")} (${vocal})</label>`
+                  v.innerHTML=`<input type="checkbox" class="vocal" name="${vocal}"><input type="radio" class="chartvocal" name="chartvocal" value="${vocal}"><label for="${vocal}">${patcher.vocals[vocal].members.length ? ("Vocal: " + patcher.vocals[vocal].members.join(", ")) : "Instrumental"} (${vocal})</label>`
                   media.append(v);
                 }
                 patcher.vocalselect = document.querySelectorAll(`input.chartvocal[type="radio"]`);
