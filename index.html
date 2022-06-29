@@ -11,23 +11,31 @@
             const assets = "https://api.pjsek.ai/assets";
             const db = "https://api.pjsek.ai/database/master";
             const http = new XMLHttpRequest();
-            http.open("GET", db+"/musics?$limit=200&$sort[id]=1");
+            http.open("GET", db+"/musics?$limit=0");
             http.setRequestHeader("Content-Type", "application/json");
             http.onload = () => {
-              list.innerHTML = '';
-              for (let song of JSON.parse(http.response).data) {
-                let item = document.createElement("a");
-                let img = document.createElement("img");
-                img.crossOrigin="anonymous";
-                item.setAttribute("href", `song.html?id=${song.id}`);
-                img.setAttribute("src",`https://assets.pjsek.ai/file/pjsekai-assets/startapp/music/jacket/${song.assetbundleName}/${song.assetbundleName}.png`);
-                let name = document.createElement("div");
-                name.innerText = song.title;
-                item.classList.add("songicon");
-                item.appendChild(img);
-                item.appendChild(name);
-                list.appendChild(item);
+              let songCount = JSON.parse(http.response).total;
+              const http2 = new XMLHttpRequest();
+              http2.open("GET", db+`/musics?$limit=${songCount}&$sort[id]=1`);
+              http2.setRequestHeader("Content-Type", "application/json");
+
+              http2.onload = () => {
+                list.innerHTML = '';
+                for (let song of JSON.parse(http2.response).data) {
+                  let item = document.createElement("a");
+                  let img = document.createElement("img");
+                  img.crossOrigin="anonymous";
+                  item.setAttribute("href", `song.html?id=${song.id}`);
+                  img.setAttribute("src",`https://assets.pjsek.ai/file/pjsekai-assets/startapp/music/jacket/${song.assetbundleName}/${song.assetbundleName}.png`);
+                  let name = document.createElement("div");
+                  name.innerText = song.title;
+                  item.classList.add("songicon");
+                  item.appendChild(img);
+                  item.appendChild(name);
+                  list.appendChild(item);
+                }
               }
+              http2.send();
             }
             http.send();
           }
