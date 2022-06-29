@@ -221,3 +221,19 @@ input[type=radio] {
 input[type=radio] {
     bottom: 2px;
 }
+
+#song {
+    text-align: center;
+}
+
+#song.dragging {
+    outline: 2px dashed #000;
+}
+
+table.custom-song-metadata {
+    display: inline-block;
+}
+
+table.custom-song-metadata td.label {
+    text-align: right;
+}

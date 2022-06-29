@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Custom Chart Patcher</title>
+        <noscript>This page requires JavaScript to function.</noscript>
+        <link rel="stylesheet" href="css/style.css">
+        <!-- don't hate -->
+        <script type="text/javascript" src="js/FileSaver.min.js"></script>
+        <script type="text/javascript" src="js/SusPatcher.js"></script>
+        <script type="text/javascript" src="js/collapsible.js"></script>
+        <script type="text/javascript">
+            var patcher;
+            let chartfile;
+            function dropHandler(ev) {
+              ev.preventDefault();
+
+              let upload = document.getElementById("custom-chart-upload");
+              if (ev.dataTransfer.files.length) {
+                chartfile = ev.dataTransfer.files[0];
+                upload.innerHTML = `${chartfile.name}`;
+              }
+              let container = document.getElementById("song");
+              container.classList.remove("dragging");
+            }
+            function dragoverHandler(ev) {
+              ev.preventDefault();
+              let upload = document.getElementById("song");
+              if (!upload.classList.contains("dragging")) upload.classList.add("dragging");
+            }
+            function dragLeaveHandler(ev) {
+              ev.preventDefault();
+              let upload = document.getElementById("song");
+              upload.classList.remove("dragging");
+            }
+            window.addEventListener("load", function () {
+              let title = document.getElementsByTagName("title")[0];
+              let h1 = document.getElementsByTagName("h1")[0];
+              let content = document.getElementById("song");
+              patcher = new Patcher();
+              let metadata = document.getElementById("patch-custom-song");
+              metadata.addEventListener("submit", ev=>{
+                ev.preventDefault();
+
+                if (!chartfile) {
+                  let upload = document.getElementById("custom-chart");
+
+                  if (upload.files.length) {
+                    chartfile = upload.files[0];
+                  }
+                }
+
+                data = new FormData(metadata);
+                
+                let reader = new FileReader();
+                reader.onload = (evt) => {
+                  let sus = evt.target.result.split("\n");
+                  metadata = {
+                    id: data.get("songid"),
+                    title: data.get("title"),
+                    artist: data.get("artist"),
+                    designer: data.get("designer"),
+                    jacket: data.get("jacket"),
+                    wave: data.get("wave"),
+                    waveoffset: data.get("waveoffset"),
+                    difficulty: data.get("difficulty"),
+                    playlevel: data.get("playlevel"),
+                  }
+                  for (const key in metadata) {
+                    if (metadata[key]===null) delete metadata[key];
+                  }
+                  if (metadata.difficulty === "") delete metadata.difficulty;
+                  sus = patcher.patchMetadata(sus, metadata);
+                  sus = patcher.patchOneChart(sus);
+                  patcher.saveCustomChart(sus.join("\n"), `${chartfile.name.split(".")[0]} patched`);
+                }
+                reader.readAsText(chartfile);
+              })
+            })
+        </script>
+    </head>
+    <body>
+        <h1>Custom Chart Patcher</h1>
+        <div id="song" class="songContainer" ondrop="dropHandler(event);" ondragover="dragoverHandler(event);" ondragleave="dragLeaveHandler(event);">
+          <form id="patch-custom-song">
+            <div id="custom-chart-upload">
+              <input type="file" id="custom-chart" name="upload">
+            </div>
+            <table class="custom-song-metadata">
+              <tr>
+                <td class="label">
+                  <label for="songid">Song ID: </label>
+                </td>
+                <td class="input">
+                  <input type="text" id="songid" name="songid">
+                </td>
+              </tr>
+              <tr>
+                <td class="label">
+                  <label for="title">Title: </label>
+                </td>
+                <td class="input">
+                  <input type="text" id="title" name="title">
+                </td>
+              </tr>
+              <tr>
+                <td class="label">
+                  <label for="artist">Artist: </label>
+                </td>
+                <td class="input">
+                  <input type="text" id="artist" name="artist">
+                </td>
+              </tr>
+              <tr>
+                <td class="label">
+                  <label for="designer">Charter: </label>
+                </td>
+                <td class="input">
+                  <input type="text" id="designer" name="designer">
+                </td>
+              </tr>
+              <tr>
+                <td class="label">
+                  <label for="jacket">Cover picture: </label>
+                </td>
+                <td class="input">
+                  <input type="text" id="jacket" name="jacket">
+                </td>
+              </tr>
+              <tr>
+                <td class="label">
+                  <label for="wave">Music file: </label>
+                </td>
+                <td class="input">
+                  <input type="text" id="wave" name="wave">
+                </td>
+              </tr>
+              <tr>
+                <td class="label">
+                  <label for="waveoffset">Music offset (seconds): </label>
+                </td>
+                <td class="input">
+                  <input type="number" id="waveoffset" name="waveoffset">
+                </td>
+              </tr>
+              <tr>
+                <td class="label">
+                  <label for="difficulty">Difficulty: </label>
+                </td>
+                <td class="input">
+                  <select name="difficulty" id="difficulty">
+                    <option value="">-- Select --</option>
+                    <option value="0">Easy</option>
+                    <option value="1">Normal</option>
+                    <option value="2">Hard</option>
+                    <option value="3">Expert</option>
+                    <option value="4">Master</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td class="label">
+                  <label for="playlevel">Numeric difficulty level: </label>
+                </td>
+                <td class="input">
+                  <input type="number" min="0" id="playlevel" name="playlevel">
+                </td>
+              </tr>
+            </table>
+            <br />
+            <button type="submit">Patch and download chart</button>
+          </form>
+        </div>
+        <div class="tips">
+          Difficulty naming in Project Sekai: Colorful Stage differs from SUS specifications, therefore when you try to play the scores on SUS-compatible players, the difficulty will not match. Plus, the numeric difficulty level also differs. <br />
+          <button class="collapsible show" data-colid="1" onclick="toggleCol(1)">Open conversion table</button>
+          <button class="collapsible hide" data-colid="1" onclick="toggleCol(1)">Close conversion table</button>
+          <div class="collapsible hide" data-colid="1">
+            <table>
+              <tr>
+                <th>Pjsk</th>
+                <th>SUS Specs</th>
+              </tr>
+              <tr>
+                <td>EASY</td>
+                <td>BASIC</td>
+              </tr>
+              <tr>
+                <td>NORMAL</td>
+                <td>ADVANCED</td>
+              </tr>
+              <tr>
+                <td>HARD</td>
+                <td>EXPERT</td>
+              </tr>
+              <tr>
+                <td>EXPERT</td>
+                <td>MASTER</td>
+              </tr>
+              <tr>
+                <td>MASTER</td>
+                <td>WORLD'S END</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+    </body>
+</html>
