@@ -139,7 +139,6 @@ class Patcher extends EventTarget {
         tmp2[vocal.assetbundleName].http = new XMLHttpRequest();
         tmp2[vocal.assetbundleName].http.open("GET", tmp2[vocal.assetbundleName].url[0]);
         tmp2[vocal.assetbundleName].http.responseType = "blob";
-        tmp2[vocal.assetbundleName].http.setRequestHeader("Accept", "audio/x-flac");
         tmp2[vocal.assetbundleName].http.onreadystatechange = onVocalDone.bind(this, vocal.assetbundleName);
         vocalsPromise.push(new Promise(resolve=>{tmp2[vocal.assetbundleName].resolve=resolve}));
         tmp2[vocal.assetbundleName].http.send();
@@ -161,7 +160,6 @@ class Patcher extends EventTarget {
         tmp2[assetbundleName].http = new XMLHttpRequest();
         tmp2[assetbundleName].http.open("GET",tmp2[assetbundleName].url[tmp2[assetbundleName].urlidx]);
         tmp2[assetbundleName].http.responseType = "blob";
-        tmp2[assetbundleName].http.setRequestHeader("Accept", "audio/x-flac");
         tmp2[assetbundleName].http.onreadystatechange = onVocalDone.bind(this, assetbundleName);
         tmp2[assetbundleName].http.send();
       } else return null;
