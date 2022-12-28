@@ -66,18 +66,21 @@
                 content.innerHTML = "";
               })
               patcher.addEventListener('ready', ()=>{
-                info.innerHTML = `<p>Lyricist: ${patcher.song.raw.lyricist}<br />Composer: ${patcher.song.raw.composer}<br />Arranger: ${patcher.song.raw.arranger}</p><p>Select file to download;<br />vocal to be used for chart music and music format</p>`
+                info.innerHTML = `<p>Lyricist: ${patcher.song.raw.lyricist}<br />Composer: ${patcher.song.raw.composer}<br />Arranger: ${patcher.song.raw.arranger}</p>`
                 title.innerText = `${patcher.song.title} - PjskSUSPatcher`;
                 h1.innerText = patcher.song.title;
+                content.classList.add("songContainer");
+                content.append(info);
                 let img = document.createElement("p");
                 patcher.addEventListener('jacketloaded', ()=>{
-                  content.classList.add("songContainer");
                   img.innerHTML = `<img src="${(window.URL||window.webkitURL).createObjectURL(patcher.song.jacket.file)}"></img>`
-                  content.append(img,info,options,audtype,selection,warn);
+                  content.prepend(img);
+                  content.append(options,audtype,selection,warn);
                 })
                 patcher.loadMedia();
               })
               patcher.addEventListener('chartsloaded', ()=>{
+                info.innerHTML += "<p>Select file to download;<br />vocal to be used for chart music and music format</p>"
                 charts.innerHTML = `<div class="chart"><input type="checkbox" id="Easy" name="Easy"><label for="Easy">Easy: ${patcher.charts.easy.playlevel}</label></div>
                 <div class="chart"><input type="checkbox" id="Normal" name="Normal"><label for="Normal">Normal: ${patcher.charts.normal.playlevel}</label></div>
                 <div class="chart"><input type="checkbox" id="Hard" name="Hard"><label for="Hard">Hard: ${patcher.charts.hard.playlevel}</label></div>
