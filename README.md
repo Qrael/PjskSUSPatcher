@@ -7,6 +7,7 @@ Website CSS modified from [BemaniPatcher](https://github.com/mon/BemaniPatcher) 
 
 ## Resource providers that make this website work
 * [pjsek.ai](https://pjsek.ai) ([GitHub](https://github.com/pjsek-ai/))
+* [Sekai Viewer](https://sekai.best) ([GitHub](https://github.com/Sekai-World/))
 
 ## Libraries used
 * [FileSaver](https://github.com/eligrey/FileSaver.js/) (MIT license)
