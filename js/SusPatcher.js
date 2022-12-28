@@ -1,7 +1,10 @@
 class Patcher extends EventTarget {
   difficulties = ["easy","normal","hard","expert","master"];
   db = "https://api.pjsek.ai/database/master";
-  asset = "https://assets.pjsek.ai/file/pjsekai-assets";
+  asset = {
+    pjsekai: "https://assets.pjsek.ai/file/pjsekai-assets",
+    sekaibest: "https://storage.sekai.best/sekai-assets",
+  };
   song = {
     title: "",
     artist: "",
@@ -39,7 +42,7 @@ class Patcher extends EventTarget {
           title: this.song.raw.title,
           artist: this.song.raw.composer,
           songid: this.song.raw.id,
-          jacket: {url:`${this.asset}/startapp/music/jacket/${this.song.raw.assetbundleName}/${this.song.raw.assetbundleName}.png`,file:null},
+          jacket: {url:`${this.asset.pjsekai}/startapp/music/jacket/${this.song.raw.assetbundleName}/${this.song.raw.assetbundleName}.png`,file:null},
           fillerSec: this.song.raw.fillerSec,
         });
         http.res();
@@ -92,7 +95,7 @@ class Patcher extends EventTarget {
     let onLoad = () => {
       for (let chart of JSON.parse(http.response).data) {
         this.charts[chart.musicDifficulty].playlevel = chart.playLevel;
-        this.charts[chart.musicDifficulty].url = `${this.asset}/startapp/music/music_score/${("000" + this.song.songid).slice(-4)+"_01"}/${chart.musicDifficulty}`
+        this.charts[chart.musicDifficulty].url = `${this.asset.pjsekai}/startapp/music/music_score/${("000" + this.song.songid).slice(-4)+"_01"}/${chart.musicDifficulty}`
       };
       let tmp = {}, tmp2 = [];
       let onChartLoad = level => {
@@ -114,9 +117,9 @@ class Patcher extends EventTarget {
   
   loadVocals() {
     let tmp = new XMLHttpRequest();
-    let tmp2 = {}, tmp2p=[];
+    let tmp2 = {}, vocalsPromise=[];
     tmp.open("GET", `${this.db}/musicVocals?musicId=${this.song.songid}`);
-    let onload = ()=>{
+    let onload = () => {
       for (let vocal of JSON.parse(tmp.response).data) {
         this.vocals[vocal.assetbundleName] = vocal;
         this.vocals[vocal.assetbundleName].members = [];
@@ -125,20 +128,43 @@ class Patcher extends EventTarget {
           this.vocals[vocal.assetbundleName].members.push(c.name?c.name:`${c.firstName?c.firstName+" ":""}${c.givenName}`);
         }
         tmp2[vocal.assetbundleName] = vocal;
+        tmp2[vocal.assetbundleName].url = [
+          /* Fallback list of urls to try */
+          `${this.asset.pjsekai}/ondemand/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.flac`,
+          `${this.asset.pjsekai}/ondemand/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.wav`,
+          `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}_rip/${vocal.assetbundleName}.flac`,
+          `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}_rip/${vocal.assetbundleName}.mp3`,
+        ]
+        tmp2[vocal.assetbundleName].urlidx = 0;
         tmp2[vocal.assetbundleName].http = new XMLHttpRequest();
-        tmp2[vocal.assetbundleName].http.open("GET",`${this.asset}/ondemand/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.flac`);
+        tmp2[vocal.assetbundleName].http.open("GET", tmp2[vocal.assetbundleName].url[0]);
         tmp2[vocal.assetbundleName].http.responseType = "blob";
         tmp2[vocal.assetbundleName].http.setRequestHeader("Accept", "audio/x-flac");
-        tmp2[vocal.assetbundleName].http.onreadystatechange = onVocalDone.bind(this,vocal.assetbundleName);
-        tmp2p.push(new Promise(resolve=>{tmp2[vocal.assetbundleName].resolve=resolve}));
+        tmp2[vocal.assetbundleName].http.onreadystatechange = onVocalDone.bind(this, vocal.assetbundleName);
+        vocalsPromise.push(new Promise(resolve=>{tmp2[vocal.assetbundleName].resolve=resolve}));
         tmp2[vocal.assetbundleName].http.send();
       }
-      Promise.all(tmp2p).then((()=>{this.dispatchEvent(new Event("vocalsloaded"))}).bind(this))
+      Promise.all(vocalsPromise).then((()=>{this.dispatchEvent(new Event("vocalsloaded"))}).bind(this))
     }
-    let onVocalDone = assetbundleName =>{
+    let onVocalDone = assetbundleName => {
       if (tmp2[assetbundleName].http.readyState!=4) return;
-      this.vocals[assetbundleName].file = tmp2[assetbundleName].http.response;
-      this.vocals[assetbundleName].trim = new Trimmer(tmp2[assetbundleName].http.response, this.song.fillerSec, tmp2[assetbundleName].resolve);
+      if (tmp2[assetbundleName].http.status>=200 && tmp2[assetbundleName].http.status<=299) {
+        this.vocals[assetbundleName].file = tmp2[assetbundleName].http.response;
+        this.vocals[assetbundleName].trim = new Trimmer(tmp2[assetbundleName].http.response, this.song.fillerSec, tmp2[assetbundleName].resolve);
+      } else {
+        tryNext.bind(this)(assetbundleName);
+      }
+    }
+    let tryNext = (assetbundleName) => {
+      tmp2[assetbundleName].urlidx++;
+      if (tmp2[assetbundleName].urlidx >=0 && tmp2[assetbundleName].urlidx < tmp2[assetbundleName].url.length) {
+        tmp2[assetbundleName].http = new XMLHttpRequest();
+        tmp2[assetbundleName].http.open("GET",tmp2[assetbundleName].url[tmp2[assetbundleName].urlidx]);
+        tmp2[assetbundleName].http.responseType = "blob";
+        tmp2[assetbundleName].http.setRequestHeader("Accept", "audio/x-flac");
+        tmp2[assetbundleName].http.onreadystatechange = onVocalDone.bind(this, assetbundleName);
+        tmp2[assetbundleName].http.send();
+      } else return null;
     }
     tmp.onload = onload.bind(this);
     tmp.send();
