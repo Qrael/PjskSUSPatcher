@@ -21,6 +21,7 @@ class Patcher extends EventTarget {
     hard: {playlevel:0,difficulty:2,sus:"",url:""},
     expert: {playlevel:0,difficulty:3,sus:"",url:""},
     master: {playlevel:0,difficulty:4,sus:"",url:""},
+    append: {playlevel:0,difficulty:4,sus:"",url:""},
   };
   char = {
     game_character: {},
@@ -94,6 +95,7 @@ class Patcher extends EventTarget {
     http.setRequestHeader("Accept", "application/json");
     let onLoad = () => {
       for (let chart of JSON.parse(http.response).data) {
+        if (!this.charts[chart.musicDifficulty]) this.charts[chart.musicDifficulty] = {playlevel:0,difficulty:0,sus:"",url:""};
         this.charts[chart.musicDifficulty].playlevel = chart.playLevel;
         this.charts[chart.musicDifficulty].url = `${this.asset.pjsekai}/startapp/music/music_score/${("000" + this.song.songid).slice(-4)+"_01"}/${chart.musicDifficulty}`
       };
