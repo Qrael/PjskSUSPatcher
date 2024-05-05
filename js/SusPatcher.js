@@ -93,25 +93,45 @@ class Patcher extends EventTarget {
     let http = new XMLHttpRequest();
     http.open("GET", this.db+"/musicDifficulties?musicId="+this.song.songid);
     http.setRequestHeader("Accept", "application/json");
+    let tmp = {}, chartsPromise = [];
     let onLoad = () => {
       for (let chart of JSON.parse(http.response).data) {
         if (!this.charts[chart.musicDifficulty]) this.charts[chart.musicDifficulty] = {playlevel:0,difficulty:0,sus:"",url:""};
         this.charts[chart.musicDifficulty].playlevel = chart.playLevel;
-        this.charts[chart.musicDifficulty].url = `${this.asset.pjsekai}/startapp/music/music_score/${("000" + this.song.songid).slice(-4)+"_01"}/${chart.musicDifficulty}`
+        this.charts[chart.musicDifficulty].url = [
+          /* Fallback list of urls to try */
+          `${this.asset.pjsekai}/startapp/music/music_score/${("000" + this.song.songid).slice(-4)}_01/${chart.musicDifficulty}`,
+          `${this.asset.sekaibest}/music/music_score/${("000" + this.song.songid).slice(-4)}_01_rip/${chart.musicDifficulty}.txt`,
+        ];
+        tmp[chart.musicDifficulty] = {};
       };
-      let tmp = {}, tmp2 = [];
-      let onChartLoad = level => {
-        this.charts[level].sus = tmp[level].response.split("\r\n").join("\n");
-        tmp[level].res();
-      }
       for (let level of this.difficulties) {
-        tmp[level] = new XMLHttpRequest();
-        tmp2.push(new Promise(res=>tmp[level].res=res));
-        tmp[level].open("GET", this.charts[level].url);
-        tmp[level].onload = onChartLoad.bind(this, level);
-        tmp[level].send();
+        tmp[level].http = new XMLHttpRequest();
+        tmp[level].urlidx = 0;
+        chartsPromise.push(new Promise(res=>tmp[level].res=res));
+        tmp[level].http.open("GET", this.charts[level].url[0]);
+        tmp[level].http.onreadystatechange = onChartDone.bind(this, level);
+        tmp[level].http.send();
       }
-      Promise.all(tmp2).then((()=>this.dispatchEvent(new Event("chartsloaded"))).bind(this));
+      Promise.all(chartsPromise).then((()=>this.dispatchEvent(new Event("chartsloaded"))).bind(this));
+    }
+    let onChartDone = level => {
+      if (tmp[level].http.readyState!=4) return;
+      if (tmp[level].http.status>=200 && tmp[level].http.status<=299) {
+        this.charts[level].sus = tmp[level].http.response.replace(/\r/g, "");
+        tmp[level].res();
+      } else {
+        tryNext.bind(this)(level);
+      }
+    }
+    let tryNext = (level) => {
+      tmp[level].urlidx++;
+      if (tmp[level].urlidx >=0 && tmp[level].urlidx < this.charts[level].url.length) {
+        tmp[level].http = new XMLHttpRequest();
+        tmp[level].http.open("GET", this.charts[level].url[tmp[level].urlidx]);
+        tmp[level].http.onreadystatechange = onChartDone.bind(this, level);
+        tmp[level].http.send();
+      } else return null;
     }
     http.onload = onLoad.bind(this);
     http.send();
@@ -136,7 +156,7 @@ class Patcher extends EventTarget {
           `${this.asset.pjsekai}/ondemand/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.wav`,
           `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}_rip/${vocal.assetbundleName}.flac`,
           `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}_rip/${vocal.assetbundleName}.mp3`,
-        ]
+        ];
         tmp2[vocal.assetbundleName].urlidx = 0;
         tmp2[vocal.assetbundleName].http = new XMLHttpRequest();
         tmp2[vocal.assetbundleName].http.open("GET", tmp2[vocal.assetbundleName].url[0]);
@@ -145,7 +165,7 @@ class Patcher extends EventTarget {
         vocalsPromise.push(new Promise(resolve=>{tmp2[vocal.assetbundleName].resolve=resolve}));
         tmp2[vocal.assetbundleName].http.send();
       }
-      Promise.all(vocalsPromise).then((()=>{this.dispatchEvent(new Event("vocalsloaded"))}).bind(this))
+      Promise.all(vocalsPromise).then((()=>{this.dispatchEvent(new Event("vocalsloaded"))}).bind(this));
     }
     let onVocalDone = assetbundleName => {
       if (tmp2[assetbundleName].http.readyState!=4) return;
@@ -489,6 +509,7 @@ class Patcher extends EventTarget {
     let h = document.getElementById("Hard").checked;
     let ex = document.getElementById("Expert").checked;
     let ma = document.getElementById("Master").checked;
+    let ap = document.getElementById("Append").checked;
     let c = document.getElementById("Jacket").checked;
     let audtype = Array.from(this.audtype).filter(el=>el.checked==true);
     let t = audtype[0].getAttribute("value");
@@ -501,7 +522,7 @@ class Patcher extends EventTarget {
         tmp.push(new Promise((resolve=>this.vocals[voc].trim.encode(t,resolve)).bind(this)));
       }
     })
-    Promise.all(tmp).then((()=>this.saveZip({easy:e,normal:n,hard:h,expert:ex,master:ma,jacket:c,vocals:v,type:t})).bind(this))
+    Promise.all(tmp).then((()=>this.saveZip({easy:e,normal:n,hard:h,expert:ex,master:ma,append:ap,jacket:c,vocals:v,type:t})).bind(this))
   }
   
   saveZip(options) {
