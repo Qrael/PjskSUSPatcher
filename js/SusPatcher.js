@@ -504,13 +504,13 @@ class Patcher extends EventTarget {
   saveContent() {
     document.querySelectorAll(`input[type="checkbox"], input[type="radio"], button.select`).forEach(el=>el.disabled=true);
     this.dispatchEvent(new Event("zipstart"));
-    let e = document.getElementById("Easy").checked;
-    let n = document.getElementById("Normal").checked;
-    let h = document.getElementById("Hard").checked;
-    let ex = document.getElementById("Expert").checked;
-    let ma = document.getElementById("Master").checked;
-    let ap = document.getElementById("Append").checked;
-    let c = document.getElementById("Jacket").checked;
+    let e = document.getElementById("Easy")?.checked;
+    let n = document.getElementById("Normal")?.checked;
+    let h = document.getElementById("Hard")?.checked;
+    let ex = document.getElementById("Expert")?.checked;
+    let ma = document.getElementById("Master")?.checked;
+    let ap = document.getElementById("Append")?.checked;
+    let c = document.getElementById("Jacket")?.checked;
     let audtype = Array.from(this.audtype).filter(el=>el.checked==true);
     let t = audtype[0].getAttribute("value");
     let tmp=[];
