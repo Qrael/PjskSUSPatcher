@@ -10,29 +10,53 @@
             let list = document.getElementById("list");
             const assets = "https://api.pjsek.ai/assets";
             const db = "https://api.pjsek.ai/database/master";
-            const http = new XMLHttpRequest();
+            const musics = "https://sekai-world.github.io/sekai-master-db-diff/musics.json";
+            let http = new XMLHttpRequest();
             http.open("GET", db+"/musics?$limit=0");
-            http.setRequestHeader("Content-Type", "application/json");
-            http.onload = () => {
-              let songCount = JSON.parse(http.response).total;
+            http.setRequestHeader("Accept", "application/json");
+            http.onreadystatechange = () => {
+              if (http.readyState!=4) return;
               const http2 = new XMLHttpRequest();
-              http2.open("GET", db+`/musics?$limit=${songCount}&$sort[id]=1`);
-              http2.setRequestHeader("Content-Type", "application/json");
+              if (http.status>=200 && http.status<=299) {
+                let songCount = JSON.parse(http.response).total;
+                http2.open("GET", db+`/musics?$limit=${songCount}&$sort[id]=1`);
+                http2.setRequestHeader("Accept", "application/json");
 
-              http2.onload = () => {
-                list.innerHTML = '';
-                for (let song of JSON.parse(http2.response).data) {
-                  let item = document.createElement("a");
-                  let img = document.createElement("img");
-                  img.crossOrigin="anonymous";
-                  item.setAttribute("href", `song.html?id=${song.id}`);
-                  img.setAttribute("src",`https://assets.pjsek.ai/file/pjsekai-assets/startapp/music/jacket/${song.assetbundleName}/${song.assetbundleName}.png`);
-                  let name = document.createElement("div");
-                  name.innerText = song.title;
-                  item.classList.add("songicon");
-                  item.appendChild(img);
-                  item.appendChild(name);
-                  list.appendChild(item);
+                http2.onload = () => {
+                  list.innerHTML = '';
+                  for (let song of JSON.parse(http2.response).data) {
+                    let item = document.createElement("a");
+                    let img = document.createElement("img");
+                    img.crossOrigin="anonymous";
+                    item.setAttribute("href", `song.html?id=${song.id}`);
+                    img.setAttribute("src",`https://assets.pjsek.ai/file/pjsekai-assets/startapp/music/jacket/${song.assetbundleName}/${song.assetbundleName}.png`);
+                    let name = document.createElement("div");
+                    name.innerText = song.title;
+                    item.classList.add("songicon");
+                    item.appendChild(img);
+                    item.appendChild(name);
+                    list.appendChild(item);
+                  }
+                }
+              } else {
+                http2.open("GET", musics);
+                http2.setRequestHeader("Accept", "application/json");
+
+                http2.onload = () => {
+                  list.innerHTML = '';
+                  for (let song of JSON.parse(http2.response)) {
+                    let item = document.createElement("a");
+                    let img = document.createElement("img");
+                    img.crossOrigin="anonymous";
+                    item.setAttribute("href", `song.html?id=${song.id}`);
+                    img.setAttribute("src",`https://storage.sekai.best/sekai-jp-assets/music/jacket/${song.assetbundleName}_rip/${song.assetbundleName}.png`);
+                    let name = document.createElement("div");
+                    name.innerText = song.title;
+                    item.classList.add("songicon");
+                    item.appendChild(img);
+                    item.appendChild(name);
+                    list.appendChild(item);
+                  }
                 }
               }
               http2.send();

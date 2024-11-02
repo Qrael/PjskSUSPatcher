@@ -1,6 +1,7 @@
 class Patcher extends EventTarget {
   difficulties = ["easy","normal","hard","expert","master"];
   db = "https://api.pjsek.ai/database/master";
+  jsons = "https://sekai-world.github.io/sekai-master-db-diff";
   asset = {
     pjsekai: "https://assets.pjsek.ai/file/pjsekai-assets",
     sekaibest: "https://storage.sekai.best/sekai-assets",
@@ -33,44 +34,101 @@ class Patcher extends EventTarget {
       let http = new XMLHttpRequest();
       http.open("GET", this.db+"/musics?id="+id);
       http.setRequestHeader("Accept", "application/json");
-      let onLoad = () => {
-        let res = JSON.parse(http.response);
-        if (!res.data[0]) {
-          return this.dispatchEvent(new Event("ERRNOSONG"));
-        }
-        this.song.raw = res.data[0];
-        this.addSongData({
-          title: this.song.raw.title,
-          artist: this.song.raw.composer,
-          songid: this.song.raw.id,
-          jacket: {url:`${this.asset.pjsekai}/startapp/music/jacket/${this.song.raw.assetbundleName}/${this.song.raw.assetbundleName}.png`,file:null},
-          fillerSec: this.song.raw.fillerSec,
-        });
-        http.res();
+      let onReadyStateChange = () => {
+        if (http.readyState!=4) return;
+        if (http.status>=200 && http.status<=299) {
+          let res = JSON.parse(http.response);
+          if (!res.data[0]) {
+            return this.dispatchEvent(new Event("ERRNOSONG"));
+          }
+          this.song.raw = res.data[0];
+          this.addSongData({
+            title: this.song.raw.title,
+            artist: this.song.raw.composer,
+            songid: this.song.raw.id,
+            jacket: {url:`${this.asset.pjsekai}/startapp/music/jacket/${this.song.raw.assetbundleName}/${this.song.raw.assetbundleName}.png`,file:null},
+            fillerSec: this.song.raw.fillerSec,
+          });
+          http.res();
+        } else {
+          let res = http.res;
+          http = new XMLHttpRequest();
+          http.open("GET", this.jsons+"/musics.json");
+          http.setRequestHeader("Accept", "application/json");
+          http.res = res;
+          http.onload = () => {
+            let res = JSON.parse(http.response).find(song => song.id == id);
+            if (!res) {
+              return this.dispatchEvent(new Event("ERRNOSONG"));
+            }
+            this.song.raw = res;
+            this.addSongData({
+              title: this.song.raw.title,
+              artist: this.song.raw.composer,
+              songid: this.song.raw.id,
+              jacket: {url:`https://storage.sekai.best/sekai-jp-assets/music/jacket/${this.song.raw.assetbundleName}_rip/${this.song.raw.assetbundleName}.png`,file:null},
+              fillerSec: this.song.raw.fillerSec,
+            });
+            http.res();
+          }
+          http.send();
+        };
       };
-      http.onload = onLoad.bind(this);
+      http.onreadystatechange = onReadyStateChange.bind(this);
       
       let http2 = new XMLHttpRequest();
       http2.open("GET", this.db+"/gameCharacters?$limit=200");
       http2.setRequestHeader("Accept", "application/json");
-      let onLoad2 = () => {
-        for (let char of JSON.parse(http2.response).data) {
-          this.char.game_character[char.id] = char;
+      let onReadyStateChange2 = () => {
+        if (http2.readyState!=4) return;
+        if (http2.status>=200 && http2.status<=299) {
+          for (let char of JSON.parse(http2.response).data) {
+            this.char.game_character[char.id] = char;
+          };
+          http2.res();
+        } else {
+          let res = http2.res;
+          http2 = new XMLHttpRequest();
+          http2.open("GET", this.jsons+"/gameCharacters.json");
+          http2.setRequestHeader("Accept", "application/json");
+          http2.res = res;
+          http2.onload = () => {
+            for (let char of JSON.parse(http2.response)) {
+              this.char.game_character[char.id] = char;
+            };
+            http2.res();
+          }
+          http2.send();
         };
-        http2.res();
       }
-      http2.onload = onLoad2.bind(this);
+      http2.onreadystatechange = onReadyStateChange2.bind(this);
       
       let http3 = new XMLHttpRequest();
       http3.open("GET", this.db+"/outsideCharacters?$limit=200");
       http3.setRequestHeader("Accept", "application/json");
-      let onLoad3 = () => {
-        for (let char of JSON.parse(http3.response).data) {
-          this.char.outside_character[char.id] = char;
+      let onReadyStateChange3 = () => {
+        if (http3.readyState!=4) return;
+        if (http3.status>=200 && http3.status<=299) {
+          for (let char of JSON.parse(http3.response).data) {
+            this.char.outside_character[char.id] = char;
+          };
+          http3.res();
+        } else {
+          let res = http3.res;
+          http3 = new XMLHttpRequest();
+          http3.open("GET", this.jsons+"/outsideCharacters.json");
+          http3.setRequestHeader("Accept", "application/json");
+          http3.res = res;
+          http3.onload = () => {
+            for (let char of JSON.parse(http3.response)) {
+              this.char.outside_character[char.id] = char;
+            };
+            http3.res();
+          }
+          http3.send();
         };
-        http3.res();
       }
-      http3.onload = onLoad3.bind(this);
+      http3.onreadystatechange = onReadyStateChange3.bind(this);
       
       Promise.all([new Promise(res=>http.res=res),new Promise(res=>http2.res=res),new Promise(res=>http3.res=res)]).then((()=>this.dispatchEvent(new Event("ready"))).bind(this))
       http.send();
@@ -94,26 +152,55 @@ class Patcher extends EventTarget {
     http.open("GET", this.db+"/musicDifficulties?musicId="+this.song.songid);
     http.setRequestHeader("Accept", "application/json");
     let tmp = {}, chartsPromise = [];
-    let onLoad = () => {
-      for (let chart of JSON.parse(http.response).data) {
-        if (!this.charts[chart.musicDifficulty]) this.charts[chart.musicDifficulty] = {playlevel:0,difficulty:0,sus:"",url:""};
-        this.charts[chart.musicDifficulty].playlevel = chart.playLevel;
-        this.charts[chart.musicDifficulty].url = [
-          /* Fallback list of urls to try */
-          `${this.asset.pjsekai}/startapp/music/music_score/${("000" + this.song.songid).slice(-4)}_01/${chart.musicDifficulty}`,
-          `${this.asset.sekaibest}/music/music_score/${("000" + this.song.songid).slice(-4)}_01_rip/${chart.musicDifficulty}.txt`,
-        ];
-        tmp[chart.musicDifficulty] = {};
-      };
-      for (let level of this.difficulties) {
-        tmp[level].http = new XMLHttpRequest();
-        tmp[level].urlidx = 0;
-        chartsPromise.push(new Promise(res=>tmp[level].res=res));
-        tmp[level].http.open("GET", this.charts[level].url[0]);
-        tmp[level].http.onreadystatechange = onChartDone.bind(this, level);
-        tmp[level].http.send();
+    let onReadyStateChange = () => {
+      if (http.readyState!=4) return;
+      if (http.status>=200 && http.status<=299) {
+        for (let chart of JSON.parse(http.response).data) {
+          if (!this.charts[chart.musicDifficulty]) this.charts[chart.musicDifficulty] = {playlevel:0,difficulty:0,sus:"",url:""};
+          this.charts[chart.musicDifficulty].playlevel = chart.playLevel;
+          this.charts[chart.musicDifficulty].url = [
+            /* Fallback list of urls to try */
+            `${this.asset.pjsekai}/startapp/music/music_score/${("000" + this.song.songid).slice(-4)}_01/${chart.musicDifficulty}`,
+            `${this.asset.sekaibest}/music/music_score/${("000" + this.song.songid).slice(-4)}_01_rip/${chart.musicDifficulty}.txt`,
+          ];
+          tmp[chart.musicDifficulty] = {};
+        };
+        for (let level of this.difficulties) {
+          tmp[level].http = new XMLHttpRequest();
+          tmp[level].urlidx = 0;
+          chartsPromise.push(new Promise(res=>tmp[level].res=res));
+          tmp[level].http.open("GET", this.charts[level].url[0]);
+          tmp[level].http.onreadystatechange = onChartDone.bind(this, level);
+          tmp[level].http.send();
+        }
+        Promise.all(chartsPromise).then((()=>this.dispatchEvent(new Event("chartsloaded"))).bind(this));
+      } else {
+        http = new XMLHttpRequest();
+        http.open("GET", this.jsons+"/musicDifficulties.json");
+        http.setRequestHeader("Accept", "application/json");
+        http.onload = (() => {
+          for (let chart of JSON.parse(http.response).filter(difficulty => difficulty.musicId == this.song.songid)) {
+            if (!this.charts[chart.musicDifficulty]) this.charts[chart.musicDifficulty] = {playlevel:0,difficulty:0,sus:"",url:""};
+            this.charts[chart.musicDifficulty].playlevel = chart.playLevel;
+            this.charts[chart.musicDifficulty].url = [
+              /* Fallback list of urls to try */
+              `${this.asset.pjsekai}/startapp/music/music_score/${("000" + this.song.songid).slice(-4)}_01/${chart.musicDifficulty}`,
+              `${this.asset.sekaibest}/music/music_score/${("000" + this.song.songid).slice(-4)}_01_rip/${chart.musicDifficulty}.txt`,
+            ];
+            tmp[chart.musicDifficulty] = {};
+          };
+          for (let level of this.difficulties) {
+            tmp[level].http = new XMLHttpRequest();
+            tmp[level].urlidx = 0;
+            chartsPromise.push(new Promise(res=>tmp[level].res=res));
+            tmp[level].http.open("GET", this.charts[level].url[0]);
+            tmp[level].http.onreadystatechange = onChartDone.bind(this, level);
+            tmp[level].http.send();
+          }
+          Promise.all(chartsPromise).then((()=>this.dispatchEvent(new Event("chartsloaded"))).bind(this));
+        }).bind(this);
+        http.send();
       }
-      Promise.all(chartsPromise).then((()=>this.dispatchEvent(new Event("chartsloaded"))).bind(this));
     }
     let onChartDone = level => {
       if (tmp[level].http.readyState!=4) return;
@@ -133,7 +220,7 @@ class Patcher extends EventTarget {
         tmp[level].http.send();
       } else return null;
     }
-    http.onload = onLoad.bind(this);
+    http.onreadystatechange = onReadyStateChange.bind(this);
     http.send();
   }
   
@@ -141,31 +228,65 @@ class Patcher extends EventTarget {
     let tmp = new XMLHttpRequest();
     let tmp2 = {}, vocalsPromise=[];
     tmp.open("GET", `${this.db}/musicVocals?musicId=${this.song.songid}`);
-    let onload = () => {
-      for (let vocal of JSON.parse(tmp.response).data) {
-        this.vocals[vocal.assetbundleName] = vocal;
-        this.vocals[vocal.assetbundleName].members = [];
-        for (let member of vocal.characters) {
-          let c = this.char[member.characterType][member.characterId];
-          this.vocals[vocal.assetbundleName].members.push(c.name?c.name:`${c.firstName?c.firstName+" ":""}${c.givenName}`);
+    let onReadyStateChange = () => {
+      if (tmp.readyState!=4) return;
+      if (tmp.status>=200 && tmp.status<=299) {
+        for (let vocal of JSON.parse(tmp.response).data) {
+          this.vocals[vocal.assetbundleName] = vocal;
+          this.vocals[vocal.assetbundleName].members = [];
+          for (let member of vocal.characters) {
+            let c = this.char[member.characterType][member.characterId];
+            this.vocals[vocal.assetbundleName].members.push(c.name?c.name:`${c.firstName?c.firstName+" ":""}${c.givenName}`);
+          }
+          tmp2[vocal.assetbundleName] = vocal;
+          tmp2[vocal.assetbundleName].url = [
+            /* Fallback list of urls to try */
+            `${this.asset.pjsekai}/ondemand/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.flac`,
+            `${this.asset.pjsekai}/ondemand/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.wav`,
+            `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}_rip/${vocal.assetbundleName}.flac`,
+            `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}_rip/${vocal.assetbundleName}.mp3`,
+          ];
+          tmp2[vocal.assetbundleName].urlidx = 0;
+          tmp2[vocal.assetbundleName].http = new XMLHttpRequest();
+          tmp2[vocal.assetbundleName].http.open("GET", tmp2[vocal.assetbundleName].url[0]);
+          tmp2[vocal.assetbundleName].http.responseType = "blob";
+          tmp2[vocal.assetbundleName].http.onreadystatechange = onVocalDone.bind(this, vocal.assetbundleName);
+          vocalsPromise.push(new Promise(resolve=>{tmp2[vocal.assetbundleName].resolve=resolve}));
+          tmp2[vocal.assetbundleName].http.send();
         }
-        tmp2[vocal.assetbundleName] = vocal;
-        tmp2[vocal.assetbundleName].url = [
-          /* Fallback list of urls to try */
-          `${this.asset.pjsekai}/ondemand/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.flac`,
-          `${this.asset.pjsekai}/ondemand/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.wav`,
-          `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}_rip/${vocal.assetbundleName}.flac`,
-          `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}_rip/${vocal.assetbundleName}.mp3`,
-        ];
-        tmp2[vocal.assetbundleName].urlidx = 0;
-        tmp2[vocal.assetbundleName].http = new XMLHttpRequest();
-        tmp2[vocal.assetbundleName].http.open("GET", tmp2[vocal.assetbundleName].url[0]);
-        tmp2[vocal.assetbundleName].http.responseType = "blob";
-        tmp2[vocal.assetbundleName].http.onreadystatechange = onVocalDone.bind(this, vocal.assetbundleName);
-        vocalsPromise.push(new Promise(resolve=>{tmp2[vocal.assetbundleName].resolve=resolve}));
-        tmp2[vocal.assetbundleName].http.send();
+        Promise.all(vocalsPromise).then((()=>{this.dispatchEvent(new Event("vocalsloaded"))}).bind(this));
+      } else {
+        tmp = new XMLHttpRequest();
+        tmp.open("GET", this.jsons+"/musicVocals.json");
+        tmp.setRequestHeader("Accept", "application/json");
+        tmp.onload = (() => {
+          for (let vocal of JSON.parse(tmp.response).filter(vocal => vocal.musicId == this.song.songid)) {
+            this.vocals[vocal.assetbundleName] = vocal;
+            this.vocals[vocal.assetbundleName].members = [];
+            for (let member of vocal.characters) {
+              let c = this.char[member.characterType][member.characterId];
+              this.vocals[vocal.assetbundleName].members.push(c.name?c.name:`${c.firstName?c.firstName+" ":""}${c.givenName}`);
+            }
+            tmp2[vocal.assetbundleName] = vocal;
+            tmp2[vocal.assetbundleName].url = [
+              /* Fallback list of urls to try */
+              `${this.asset.pjsekai}/ondemand/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.flac`,
+              `${this.asset.pjsekai}/ondemand/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.wav`,
+              `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}_rip/${vocal.assetbundleName}.flac`,
+              `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}_rip/${vocal.assetbundleName}.mp3`,
+            ];
+            tmp2[vocal.assetbundleName].urlidx = 0;
+            tmp2[vocal.assetbundleName].http = new XMLHttpRequest();
+            tmp2[vocal.assetbundleName].http.open("GET", tmp2[vocal.assetbundleName].url[0]);
+            tmp2[vocal.assetbundleName].http.responseType = "blob";
+            tmp2[vocal.assetbundleName].http.onreadystatechange = onVocalDone.bind(this, vocal.assetbundleName);
+            vocalsPromise.push(new Promise(resolve=>{tmp2[vocal.assetbundleName].resolve=resolve}));
+            tmp2[vocal.assetbundleName].http.send();
+          }
+          Promise.all(vocalsPromise).then((()=>{this.dispatchEvent(new Event("vocalsloaded"))}).bind(this));
+        }).bind(this);
+        tmp.send();
       }
-      Promise.all(vocalsPromise).then((()=>{this.dispatchEvent(new Event("vocalsloaded"))}).bind(this));
     }
     let onVocalDone = assetbundleName => {
       if (tmp2[assetbundleName].http.readyState!=4) return;
@@ -186,7 +307,7 @@ class Patcher extends EventTarget {
         tmp2[assetbundleName].http.send();
       } else return null;
     }
-    tmp.onload = onload.bind(this);
+    tmp.onreadystatechange = onReadyStateChange.bind(this);
     tmp.send();
   }
   
