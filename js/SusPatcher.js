@@ -4,7 +4,7 @@ class Patcher extends EventTarget {
   jsons = "https://sekai-world.github.io/sekai-master-db-diff";
   asset = {
     pjsekai: "https://assets.pjsek.ai/file/pjsekai-assets",
-    sekaibest: "https://storage.sekai.best/sekai-assets",
+    sekaibest: "https://storage.sekai.best/sekai-jp-assets",
   };
   song = {
     title: "",
@@ -66,7 +66,7 @@ class Patcher extends EventTarget {
               title: this.song.raw.title,
               artist: this.song.raw.composer,
               songid: this.song.raw.id,
-              jacket: {url:`https://storage.sekai.best/sekai-jp-assets/music/jacket/${this.song.raw.assetbundleName}_rip/${this.song.raw.assetbundleName}.png`,file:null},
+              jacket: {url:`${this.asset.sekaibest}/music/jacket/${this.song.raw.assetbundleName}_rip/${this.song.raw.assetbundleName}.png`,file:null},
               fillerSec: this.song.raw.fillerSec,
             });
             http.res();
