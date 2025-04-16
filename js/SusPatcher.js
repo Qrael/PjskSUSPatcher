@@ -66,7 +66,7 @@ class Patcher extends EventTarget {
               title: this.song.raw.title,
               artist: this.song.raw.composer,
               songid: this.song.raw.id,
-              jacket: {url:`${this.asset.sekaibest}/music/jacket/${this.song.raw.assetbundleName}_rip/${this.song.raw.assetbundleName}.png`,file:null},
+              jacket: {url:`${this.asset.sekaibest}/music/jacket/${this.song.raw.assetbundleName}/${this.song.raw.assetbundleName}.png`,file:null},
               fillerSec: this.song.raw.fillerSec,
             });
             http.res();
@@ -161,7 +161,7 @@ class Patcher extends EventTarget {
           this.charts[chart.musicDifficulty].url = [
             /* Fallback list of urls to try */
             `${this.asset.pjsekai}/startapp/music/music_score/${("000" + this.song.songid).slice(-4)}_01/${chart.musicDifficulty}`,
-            `${this.asset.sekaibest}/music/music_score/${("000" + this.song.songid).slice(-4)}_01_rip/${chart.musicDifficulty}.txt`,
+            `${this.asset.sekaibest}/music/music_score/${("000" + this.song.songid).slice(-4)}_01/${chart.musicDifficulty}.txt`,
           ];
           tmp[chart.musicDifficulty] = {};
         };
@@ -185,7 +185,7 @@ class Patcher extends EventTarget {
             this.charts[chart.musicDifficulty].url = [
               /* Fallback list of urls to try */
               `${this.asset.pjsekai}/startapp/music/music_score/${("000" + this.song.songid).slice(-4)}_01/${chart.musicDifficulty}`,
-              `${this.asset.sekaibest}/music/music_score/${("000" + this.song.songid).slice(-4)}_01_rip/${chart.musicDifficulty}.txt`,
+              `${this.asset.sekaibest}/music/music_score/${("000" + this.song.songid).slice(-4)}_01/${chart.musicDifficulty}.txt`,
             ];
             tmp[chart.musicDifficulty] = {};
           };
@@ -243,8 +243,8 @@ class Patcher extends EventTarget {
             /* Fallback list of urls to try */
             `${this.asset.pjsekai}/ondemand/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.flac`,
             `${this.asset.pjsekai}/ondemand/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.wav`,
-            `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}_rip/${vocal.assetbundleName}.flac`,
-            `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}_rip/${vocal.assetbundleName}.mp3`,
+            `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.flac`,
+            `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.mp3`,
           ];
           tmp2[vocal.assetbundleName].urlidx = 0;
           tmp2[vocal.assetbundleName].http = new XMLHttpRequest();
@@ -272,8 +272,8 @@ class Patcher extends EventTarget {
               /* Fallback list of urls to try */
               `${this.asset.pjsekai}/ondemand/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.flac`,
               `${this.asset.pjsekai}/ondemand/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.wav`,
-              `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}_rip/${vocal.assetbundleName}.flac`,
-              `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}_rip/${vocal.assetbundleName}.mp3`,
+              `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.flac`,
+              `${this.asset.sekaibest}/music/long/${vocal.assetbundleName}/${vocal.assetbundleName}.mp3`,
             ];
             tmp2[vocal.assetbundleName].urlidx = 0;
             tmp2[vocal.assetbundleName].http = new XMLHttpRequest();
