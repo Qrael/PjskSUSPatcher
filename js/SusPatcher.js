@@ -612,12 +612,16 @@ class Patcher extends EventTarget {
   
   selectAll() {
     document.querySelectorAll(`input[type="checkbox"]`).forEach(el=>el.checked=true);
+    if ([...document.querySelectorAll(`input.chartvocal[type="radio"]`)].every(v=>!v.checked)) {
+      document.querySelector(`input.chartvocal[type="radio"]`).checked = true;
+    }
     delete this.zip;
     document.getElementById('download').innerText="Patch and download selected";
   }
   
   unselectAll() {
     document.querySelectorAll(`input[type="checkbox"]`).forEach(el=>el.checked=false);
+    document.querySelectorAll(`input.chartvocal[type="radio"]`).forEach(el=>el.checked=false);
     delete this.zip;
     document.getElementById('download').innerText="Patch and download selected";
   }

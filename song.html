@@ -80,7 +80,7 @@
                 patcher.loadMedia();
               })
               patcher.addEventListener('chartsloaded', ()=>{
-                info.innerHTML += "<p>Select file to download;<br />vocal to be used for chart music and music format</p>"
+                info.innerHTML += `<p>Checkbox: select files to download<br />Radio button: select default chart music, music file format</p>`
                 charts.innerHTML = `<div class="chart"><input type="checkbox" id="Easy" name="Easy"><label for="Easy">Easy: ${patcher.charts.easy.playlevel}</label></div>
                 <div class="chart"><input type="checkbox" id="Normal" name="Normal"><label for="Normal">Normal: ${patcher.charts.normal.playlevel}</label></div>
                 <div class="chart"><input type="checkbox" id="Hard" name="Hard"><label for="Hard">Hard: ${patcher.charts.hard.playlevel}</label></div>
