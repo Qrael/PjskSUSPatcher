@@ -21,7 +21,7 @@ class Patcher extends EventTarget {
     normal: {playlevel:0,difficulty:1,sus:"",url:""},
     hard: {playlevel:0,difficulty:2,sus:"",url:""},
     expert: {playlevel:0,difficulty:3,sus:"",url:""},
-    master: {playlevel:0,difficulty:4,sus:"",url:""},
+    master: {playlevel:0,difficulty:5,sus:"",url:""},
     append: {playlevel:0,difficulty:4,sus:"",url:""},
   };
   char = {
@@ -622,6 +622,7 @@ class Patcher extends EventTarget {
   unselectAll() {
     document.querySelectorAll(`input[type="checkbox"]`).forEach(el=>el.checked=false);
     document.querySelectorAll(`input.chartvocal[type="radio"]`).forEach(el=>el.checked=false);
+
     delete this.zip;
     document.getElementById('download').innerText="Patch and download selected";
   }
